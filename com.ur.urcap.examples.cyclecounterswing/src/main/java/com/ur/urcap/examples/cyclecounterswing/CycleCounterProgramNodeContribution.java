@@ -74,7 +74,7 @@ public class CycleCounterProgramNodeContribution implements ProgramNodeContribut
 
 	@Override
 	public String getTitle() {
-		return "Cycle Counter Swing";
+		return "Cycle Counter";
 	}
 
 	@Override
