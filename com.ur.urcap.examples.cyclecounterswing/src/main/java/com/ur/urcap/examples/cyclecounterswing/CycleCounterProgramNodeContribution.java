@@ -25,6 +25,7 @@ import com.ur.urcap.api.domain.variable.VariableFactory;
 
 import java.util.Collection;
 
+
 public class CycleCounterProgramNodeContribution implements ProgramNodeContribution {
 	public static final String SELECTED_VAR = "selectedVar";
 	private static final String TEXT = "Text";
@@ -64,7 +65,7 @@ public class CycleCounterProgramNodeContribution implements ProgramNodeContribut
 
 	@Override
 	public void openView() {
-		view.update(this);
+		view.updateView(this);
 	}
 
 	@Override

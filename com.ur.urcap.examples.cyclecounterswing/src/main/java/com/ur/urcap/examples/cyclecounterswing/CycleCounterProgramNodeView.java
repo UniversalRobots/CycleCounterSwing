@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+
 public class CycleCounterProgramNodeView implements SwingProgramNodeView<CycleCounterProgramNodeContribution> {
 
 	public static final String INFO_1 = "<html><body><p>Each time this node and its children are run, the counting variable will increment by one.<br>\n" +
@@ -29,9 +30,9 @@ public class CycleCounterProgramNodeView implements SwingProgramNodeView<CycleCo
 
 	private final Style style;
 
-	private JTextField txtNewVariable = new JTextField();
-	private JButton btnNewVariable = new JButton("Create new");
-	private JComboBox cmbVariables = new JComboBox();
+	private JTextField newVariableTextField = new JTextField();
+	private JButton newVariableButton = new JButton("Create new");
+	private JComboBox variablesComboBox = new JComboBox();
 	private JLabel errorLabel = new JLabel();
 	private final ImageIcon errorIcon;
 
@@ -66,32 +67,32 @@ public class CycleCounterProgramNodeView implements SwingProgramNodeView<CycleCo
 		Box horizontalBox = Box.createHorizontalBox();
 		horizontalBox.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		txtNewVariable.setFocusable(false);
-		txtNewVariable.setPreferredSize(style.getInputfieldDimension());
-		txtNewVariable.setMaximumSize(txtNewVariable.getPreferredSize());
-		txtNewVariable.addMouseListener(new MouseAdapter() {
+		newVariableTextField.setFocusable(false);
+		newVariableTextField.setPreferredSize(style.getInputfieldDimension());
+		newVariableTextField.setMaximumSize(newVariableTextField.getPreferredSize());
+		newVariableTextField.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent mouseEvent) {
 				KeyboardTextInput keyboardInput = provider.get().getKeyboardForInput();
-				keyboardInput.show(txtNewVariable, provider.get().getCallbackForInput());
+				keyboardInput.show(newVariableTextField, provider.get().getCallbackForInput());
 			}
 		});
 
-		horizontalBox.add(txtNewVariable);
+		horizontalBox.add(newVariableTextField);
 		horizontalBox.add(createHorizontalSpacing());
 
-		btnNewVariable.addActionListener(new ActionListener() {
+		newVariableButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
 				clearErrors();
 				//Create a global variable with an initial value and store it in the data model to make it available to all program nodes.
-				GlobalVariable variable = provider.get().createGlobalVariable(txtNewVariable.getText());
+				GlobalVariable variable = provider.get().createGlobalVariable(newVariableTextField.getText());
 				provider.get().setVariable(variable);
-				updateComboBox(provider.get());
+				updateVariablesComboBox(provider.get());
 			}
 		});
 
-		horizontalBox.add(btnNewVariable);
+		horizontalBox.add(newVariableButton);
 		return horizontalBox;
 	}
 
@@ -117,9 +118,9 @@ public class CycleCounterProgramNodeView implements SwingProgramNodeView<CycleCo
 		Box inputBox = Box.createHorizontalBox();
 		inputBox.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		cmbVariables.setFocusable(false);
-		cmbVariables.setPreferredSize(style.getComboBoxDimension());
-		cmbVariables.addItemListener(new ItemListener() {
+		variablesComboBox.setFocusable(false);
+		variablesComboBox.setPreferredSize(style.getComboBoxDimension());
+		variablesComboBox.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent itemEvent) {
 				if (itemEvent.getStateChange() == ItemEvent.SELECTED) {
@@ -133,14 +134,14 @@ public class CycleCounterProgramNodeView implements SwingProgramNodeView<CycleCo
 		});
 
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		panel.add(cmbVariables, BorderLayout.CENTER);
+		panel.add(variablesComboBox, BorderLayout.CENTER);
 
 		inputBox.add(panel);
 		return inputBox;
 	}
 
 	public void setNewVariable(String value) {
-		txtNewVariable.setText(value);
+		newVariableTextField.setText(value);
 	}
 
 	private ImageIcon getErrorImage() {
@@ -160,43 +161,51 @@ public class CycleCounterProgramNodeView implements SwingProgramNodeView<CycleCo
 	}
 
 	private void clearInputVariableName() {
-		txtNewVariable.setText("");
+		newVariableTextField.setText("");
 	}
 
 	private void clearErrors() {
 		errorLabel.setVisible(false);
 	}
 
-	private void updateComboBox(CycleCounterProgramNodeContribution contribution) {
-		List<Object> items = new ArrayList<Object>();
-		items.addAll(contribution.getGlobalVariables());
+	private void updateVariablesComboBox(CycleCounterProgramNodeContribution contribution) {
+		DefaultComboBoxModel model = new DefaultComboBoxModel();
+		List<Variable> variables = getVariables(contribution);
 
-		Collections.sort(items, new Comparator<Object>() {
+		Variable selectedVariable = contribution.getSelectedVariable();
+		if (selectedVariable != null) {
+			model.setSelectedItem(selectedVariable);
+		}
+		model.addElement("<Variable>");
+
+		for (Variable variable : variables) {
+			model.addElement(variable);
+		}
+
+		variablesComboBox.setModel(model);
+	}
+
+	private List<Variable> getVariables(CycleCounterProgramNodeContribution contribution) {
+		List<Variable> sortedVariables = new ArrayList<Variable>(contribution.getGlobalVariables());
+
+		Collections.sort(sortedVariables, new Comparator<Variable>() {
 			@Override
-			public int compare(Object o1, Object o2) {
-				if (o1.toString().toLowerCase().compareTo(o2.toString().toLowerCase()) == 0) {
+			public int compare(Variable var1, Variable var2) {
+				if (var1.toString().toLowerCase().compareTo(var2.toString().toLowerCase()) == 0) {
 					//Sort lowercase/uppercase consistently
-					return o1.toString().compareTo(o2.toString());
+					return var1.toString().compareTo(var2.toString());
 				} else {
-					return o1.toString().toLowerCase().compareTo(o2.toString().toLowerCase());
+					return var1.toString().toLowerCase().compareTo(var2.toString().toLowerCase());
 				}
 			}
 		});
 
-		//Insert at top after sorting
-		items.add(0, "Select counting variable");
-
-		cmbVariables.setModel(new DefaultComboBoxModel(items.toArray()));
-
-		Variable selectedVar = contribution.getSelectedVariable();
-		if (selectedVar != null) {
-			cmbVariables.setSelectedItem(selectedVar);
-		}
+		return sortedVariables;
 	}
 
-	public void update(CycleCounterProgramNodeContribution contribution) {
+	public void updateView(CycleCounterProgramNodeContribution contribution) {
 		clearInputVariableName();
 		clearErrors();
-		updateComboBox(contribution);
+		updateVariablesComboBox(contribution);
 	}
 }
